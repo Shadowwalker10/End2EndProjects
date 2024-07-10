@@ -12,7 +12,7 @@ from sklearn.compose import ColumnTransformer
 from sentence_transformers import SentenceTransformer
 from src.exceptions import Custom_exception
 from src.logger import logging
-from src.utils import save_object
+from src.utils import save_object, compile_text
 
 @dataclass
 class DataTransformationConfig:
@@ -94,18 +94,6 @@ class DataTransformation:
 
             ##Applying Sentence Transformer and PCA
             ### Defining Function for Data Restructuring
-            def compile_text(x):
-                text = f"""
-                gender: {x['gender']},
-                race_ethnicity: {x['race_ethnicity']},
-                parental_level_of_education: {x['parental_level_of_education']},
-                lunch: {x['lunch']},
-                test_preparation_course: {x['test_preparation_course']},
-                reading_score: {x['reading_score']},
-                writing_score: {x['writing_score']}
-                """
-                return text
-            
             
             input_train_features = pd.DataFrame(input_train_features, columns=columns)
 
@@ -123,7 +111,7 @@ class DataTransformation:
             if not os.path.exists(model_path):
                 logging.info(f"Path {model_path} not found. Downloading the model...")
                 model = SentenceTransformer('paraphrase-MiniLM-L12-v2')
-                model.save(model_path)
+                # model.save(model_path)
             else:
                 model = SentenceTransformer(model_name_or_path = model_path)
             
@@ -137,6 +125,8 @@ class DataTransformation:
                 normalize_embeddings = True
             )
 
+            # print("Transformer Output: ", train_output.shape)
+
             logging.info("Completed Encoding of Train Test Data Using Transformer...")
             df_train_embedded = pd.concat([pd.DataFrame(train_output), 
                                            train_df[target_col_name].reset_index(drop = True)], 
@@ -145,8 +135,9 @@ class DataTransformation:
                                           test_df[target_col_name].reset_index(drop = True)],
                                           axis=1)
 
-            df_train_embedded.to_csv(path_or_buf = self.data_transformation_config.embedded_train)
-            df_test_embedded.to_csv(path_or_buf = self.data_transformation_config.embedded_test)
+            df_train_embedded.to_csv(path_or_buf = self.data_transformation_config.embedded_train, index = False)
+            df_test_embedded.to_csv(path_or_buf = self.data_transformation_config.embedded_test, index = False)
+            # print("After addding target: ", df_train_embedded.shape)
 
         except Exception as e:
             raise Custom_exception(e, sys)
@@ -157,6 +148,7 @@ class DataTransformation:
             ## Load the embedded train test csv file
             embedded_train_df = pd.read_csv(self.data_transformation_config.embedded_train)
             embedded_test_df = pd.read_csv(self.data_transformation_config.embedded_test)
+            # print("Loaded for pca: ", embedded_train_df.shape)
             train_target = embedded_train_df.iloc[:,-1]
             test_target = embedded_test_df.iloc[:,-1]
 
@@ -165,6 +157,7 @@ class DataTransformation:
             
             pca = PCA(n_components = 30)
             logging.info("PCA Initialized...")
+            # print("Taken for pca: ", embedded_train_df.iloc[:, :-1].shape)
             pca_train = pca.fit_transform(embedded_train_df.iloc[:,:-1])
             pca_test = pca.transform(embedded_test_df.iloc[:,:-1])
 

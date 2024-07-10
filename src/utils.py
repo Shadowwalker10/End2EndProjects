@@ -45,3 +45,31 @@ def perform_grid_search_cv(model_dict:dict, params_grid:dict, x_test, y_test):
         return best_estimator, best_model, best_score
     except Exception as e:
         raise Custom_exception(e, sys)
+    
+
+
+def compile_text(x):
+    text = f"""
+    gender: {x['gender']},
+    race_ethnicity: {x['race_ethnicity']},
+    parental_level_of_education: {x['parental_level_of_education']},
+    lunch: {x['lunch']},
+    test_preparation_course: {x['test_preparation_course']},
+    reading_score: {x['reading_score']},
+    writing_score: {x['writing_score']}
+    """
+    return text
+    
+
+def load_object(file_path):
+    try:
+        with open(file_path, "rb") as f:
+            obj = pickle.load(f)
+        return obj
+
+    except Exception as e:
+        raise Custom_exception(e,sys)
+    
+
+
+        
